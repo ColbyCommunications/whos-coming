@@ -193,11 +193,23 @@ class WhosComing {
 
 	/**
 	 * Gets the plugin's dist/ directory URL, whether this package is installed as a plugin
-	 * or in a theme via composer.
+	 * or in a theme via composer. If the package is in neither of those places, this whole
+	 * thing will fail.
 	 *
 	 * @return string The URL.
 	 */
 	public static function get_dist_directory() : string {
+		/**
+		 * Filters the URL location of the /dist directory.
+		 *
+		 * @param string The URL.
+		 */
+		$dist = apply_filters( 'colbycomms__whos_coming__enqueue_script', '' );
+
+		if ( ! empty( $dist ) ) {
+			return $dist;
+		}
+
 		if ( file_exists( dirname( __DIR__, 3 ) . '/plugins' ) ) {
 			return plugin_dir_url( dirname( __DIR__ ) . '/index.php' ) . '/dist/';
 		}
