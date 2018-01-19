@@ -2,6 +2,10 @@
 
 require dirname( __DIR__ ) . '/vendor/autoload.php';
 
+$dist = strpos( $_SERVER['SERVER_NAME'], 'github' ) !== false
+	? '/whos-coming/dist/'
+	: '/dist/';
+
 use ColbyComms\WhosComing\{DataFetcher, WhosComing};
 
 $csv_data = include 'demo-data.php';
@@ -13,7 +17,7 @@ $fields = include 'fields.php';
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=0" />
-<link rel="stylesheet" href="/dist/whos-coming.css" />
+<link rel="stylesheet" href="<?php echo $dist; ?>whos-coming.css" />
 <title>
 	Who's Coming demo
 </title>
@@ -28,4 +32,4 @@ main {
 <main>
 	<?php echo WhosComing::render( $demo_data, $fields, 'name' ); ?>
 </main>
-<script src="/dist/whos-coming.js"></script>
+<script src="<?php echo $dist; ?>whos-coming.js"></script>
