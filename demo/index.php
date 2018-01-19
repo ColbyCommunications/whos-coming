@@ -2,9 +2,7 @@
 
 require dirname( __DIR__ ) . '/vendor/autoload.php';
 
-$dist = ! empty( $_SERVER['SERVER_NAME'] )
-	? '/dist/'
-	: '/whos-coming/dist/';
+$dist = '../dist/';
 
 use ColbyComms\WhosComing\{DataFetcher, WhosComing};
 
