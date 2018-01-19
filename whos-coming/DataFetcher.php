@@ -143,6 +143,6 @@ class DataFetcher {
 			return '';
 		}
 
-		return $data ?: [];
+		return $data ?: '';
 	}
 }

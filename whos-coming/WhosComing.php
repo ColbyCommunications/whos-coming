@@ -63,7 +63,7 @@ class WhosComing {
 		WP::add_action( 'wp_enqueue_scripts', [ __CLASS__, 'enqueue_scripts_and_styles' ] );
 		$this->data = self::get_data();
 		$this->fields = Carbon::get_theme_option( 'whos_coming__display_fields' );
-		$this->search_field = Carbon::get_theme_option( 'whos_coming__search_field' );
+		$this->search_field = Carbon::get_theme_option( 'whos_coming__search_field' ) ?: '';
 	}
 
 	/**

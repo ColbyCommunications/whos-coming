@@ -7,6 +7,7 @@ $dist = '../dist/';
 use ColbyComms\WhosComing\{DataFetcher, WhosComing};
 
 $csv_data = include 'demo-data.php';
+print_r( $csv_data );
 $demo_data = DataFetcher::format_csv( $csv_data );
 $fields = include 'fields.php';
 
