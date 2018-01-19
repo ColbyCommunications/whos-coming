@@ -2,9 +2,9 @@
 
 require dirname( __DIR__ ) . '/vendor/autoload.php';
 
-$dist = strpos( $_SERVER['SERVER_NAME'], 'github' ) !== false
-	? '/whos-coming/dist/'
-	: '/dist/';
+$dist = ! empty( $_SERVER['SERVER_NAME'] )
+	? '/dist/'
+	: '/whos-coming/dist/';
 
 use ColbyComms\WhosComing\{DataFetcher, WhosComing};
 
