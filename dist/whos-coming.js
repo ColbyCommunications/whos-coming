@@ -137,7 +137,8 @@ var RowSorter = function () {
    * Gathers data attributes from inside a row.
    *
    * @param {HTMLElement} element An HTML element.
-   * @return {object} An object containing the data attribute values as keys and innerHTML as values.
+   * @return {object} An object containing the data attribute values as keys
+   *                  and innerHTML as values.
    */
   function RowSorter(container) {
     var _this = this;
@@ -173,7 +174,7 @@ var RowSorter = function () {
       try {
         this.keyRow = this.container.querySelector('.whos-coming__row--key');
         this.columns = [].concat(_toConsumableArray(this.keyRow.querySelectorAll('[data-whos-coming-column]')));
-        this.sortDirection = 'desc'; // Will be flipped on the initialization run of getSortedRows.
+        this.sortDirection = 'desc'; // Will be flipped on the initialization run.
         this.sortColumn = this.columns[0].getAttribute('data-whos-coming-column');
       } catch (e) {
         // Do nothing.
@@ -423,6 +424,8 @@ module.exports = function debounce(func, wait, immediate) {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+/* eslint max-len: 0 */
+
 var upArrow = exports.upArrow = "<svg width=\"1792\" height=\"1792\" viewBox=\"0 0 1792 1792\">\n<path d=\"M1395 1184q0 13-10 23l-50 50q-10 10-23 10t-23-10l-393-393-393 393q-10 10-23 10t-23-10l-50-50q-10-10-10-23t10-23l466-466q10-10 23-10t23 10l466 466q10 10 10 23z\" fill=\"currentColor\"/>\n</svg>";
 
 /***/ }),
@@ -435,6 +438,7 @@ var upArrow = exports.upArrow = "<svg width=\"1792\" height=\"1792\" viewBox=\"0
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+/* eslint max-len: 0 */
 var downArrow = exports.downArrow = "<svg width=\"1792\" height=\"1792\" viewBox=\"0 0 1792 1792\" class=\"down-arrow-svg\">\n<title>Open</title>\n<path d=\"M1395 736q0 13-10 23l-466 466q-10 10-23 10t-23-10l-466-466q-10-10-10-23t10-23l50-50q10-10 23-10t23 10l393 393 393-393q10-10 23-10t23 10l50 50q10 10 10 23z\" fill=\"currentColor\"/>\n</svg>";
 
 /***/ }),

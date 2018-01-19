@@ -45,6 +45,8 @@ class WhosComing {
 
 		return WP::is_singular()
 			&& ! empty( $post )
+			&& is_object( $post )
+			&& ! empty( $post->post_content )
 			&& WP::has_shortcode( $post->post_content, self::$shortcode );
 	}
 
@@ -81,7 +83,7 @@ class WhosComing {
 	public function whos_coming_shortcode() : string {
 		ob_start();
 
-		self::render( $this->data, $this->fields );
+		self::render( $this->data, $this->fields, $this->search_field );
 
 		return ob_get_clean();
 	}
@@ -100,7 +102,7 @@ class WhosComing {
 		?>
 <label class="whos-coming__search">
 	<span>Search</span>
-	<input type="search" placeholder="Search" data-whos-coming-search="<?php echo WP::esc_attr( $field ); ?>"  />
+	<input type="search" placeholder="Search" data-whos-coming-search="<?php echo WP::esc_attr( $field ); ?>" />
 </label>
 		<?php
 	}
@@ -141,10 +143,10 @@ class WhosComing {
 		<div class="whos-coming__row">
 		<?php foreach ( $fields as $field ) : ?>
 			<?php if ( ! empty( $person[ $field['whos_coming__field_key'] ] ) ) : ?>
-				<span data-whos-coming-data="<?php echo WP::esc_attr( $field['whos_coming__field_key'] ); ?>"
-					class="whos-coming__cell whos-coming__<?php echo WP::esc_attr( $field['whos_coming__field_key'] ); ?>">
-					<?php echo WP::wp_kses_post( $person[ $field['whos_coming__field_key'] ] ); ?>
-				</span>
+			<span data-whos-coming-data="<?php echo WP::esc_attr( $field['whos_coming__field_key'] ); ?>"
+				class="whos-coming__cell whos-coming__<?php echo WP::esc_attr( $field['whos_coming__field_key'] ); ?>">
+				<?php echo WP::wp_kses_post( $person[ $field['whos_coming__field_key'] ] ); ?>
+			</span>
 			<?php endif; ?>
 		<?php endforeach; ?>
 		</div>
