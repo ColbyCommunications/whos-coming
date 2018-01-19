@@ -2,6 +2,8 @@
 
 A WordPress plugin generating a listing of people who have R.S.V.P.'ed to an event, with the list entered in JSON or CSV format.
 
+[Demo.](https://colbycommunications.github.io/whos-coming/demo/)
+
 ## Install
 
 Clone this repository in your plugin repository. Alternatively install as a Composer package in a WordPress theme with
