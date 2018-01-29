@@ -82,6 +82,12 @@ class RowSorter {
   startSearch() {
     this.searchField = this.searchInput.getAttribute('data-whos-coming-search');
     this.searchInput.addEventListener('keyup', this.search);
+    this.searchInput.addEventListener('search', event => {
+      if (!event.target.value.trim()) {
+        this.resetSearch();
+        return;
+      }
+    });
   }
 
   matchesSearch(searchWords, textWords) {
@@ -100,10 +106,14 @@ class RowSorter {
     return false;
   }
 
+  resetSearch(event) {
+    this.setUp();
+    this.sortByColumn(this.columns[0]);
+  }
+
   search(event) {
     if (!event.target.value.trim()) {
-      this.setUp();
-      this.sortByColumn(this.columns[0]);
+      this.resetSearch();
       return;
     }
 

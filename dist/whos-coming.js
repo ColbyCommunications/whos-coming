@@ -199,8 +199,16 @@ var RowSorter = function () {
   }, {
     key: 'startSearch',
     value: function startSearch() {
+      var _this2 = this;
+
       this.searchField = this.searchInput.getAttribute('data-whos-coming-search');
       this.searchInput.addEventListener('keyup', this.search);
+      this.searchInput.addEventListener('search', function (event) {
+        if (!event.target.value.trim()) {
+          _this2.resetSearch();
+          return;
+        }
+      });
     }
   }, {
     key: 'matchesSearch',
@@ -220,29 +228,34 @@ var RowSorter = function () {
       return false;
     }
   }, {
+    key: 'resetSearch',
+    value: function resetSearch(event) {
+      this.setUp();
+      this.sortByColumn(this.columns[0]);
+    }
+  }, {
     key: 'search',
     value: function search(event) {
-      var _this2 = this;
+      var _this3 = this;
 
       if (!event.target.value.trim()) {
-        this.setUp();
-        this.sortByColumn(this.columns[0]);
+        this.resetSearch();
         return;
       }
 
       var words = event.target.value.toLowerCase().split(' ');
 
       this.rerender(this.rows.filter(function (row) {
-        return _this2.matchesSearch(words, row.data[_this2.searchField].toLowerCase().split(' '));
+        return _this3.matchesSearch(words, row.data[_this3.searchField].toLowerCase().split(' '));
       }));
     }
   }, {
     key: 'addColumnClickListener',
     value: function addColumnClickListener(column) {
-      var _this3 = this;
+      var _this4 = this;
 
       column.addEventListener('click', function () {
-        return _this3.sortByColumn(column);
+        return _this4.sortByColumn(column);
       });
     }
   }, {
