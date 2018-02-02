@@ -18,7 +18,7 @@ class WhosComing {
 	 *
 	 * @var bool
 	 */
-	const PROD = false;
+	const PROD = true;
 
 	/**
 	 * The vendor name for this package.

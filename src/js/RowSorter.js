@@ -74,7 +74,6 @@ class RowSorter {
       ];
       this.columnToSortBy = this.columns[0].getAttribute(COLUMN_DATA_ATTRIBUTE);
       this.rows = RowSorter.makeRows();
-      this.originalRows = this.rows.map(item => Object.assign({}, item));
     } catch (e) {
       // Do nothing.
     }
@@ -92,6 +91,9 @@ class RowSorter {
     this.render();
   }
 
+  /**
+   * Sets up the search if a search input is found.
+   */
   maybeStartSearch() {
     const searchInput = document.querySelector(`[${SEARCH_DATA_ATTRIBUTE}]`);
 
@@ -101,6 +103,9 @@ class RowSorter {
     }
   }
 
+  /**
+   * Sets up the select input if the input is found.
+   */
   maybeStartSelect() {
     const select = document.querySelector(`[${SELECT_DATA_ATTRIBUTE}]`);
     if (select) {
@@ -114,16 +119,25 @@ class RowSorter {
     }
   }
 
+  /**
+   * Sets the active option (the select field value) and rerenders.
+   */
   setActiveOption(option) {
     this.activeOption = option;
     this.render();
   }
 
+  /**
+   * Sets the search term and rerenders.
+   */
   setSearchTerm(searchTerm) {
     this.searchTerm = searchTerm;
     this.render();
   }
 
+  /**
+   * Sets the column to sort by and the sort direction and rerenders.
+   */
   setSortColumn(column) {
     const field = column.getAttribute(COLUMN_DATA_ATTRIBUTE);
 
@@ -137,6 +151,13 @@ class RowSorter {
     this.render();
   }
 
+  /**
+   * Checks whether a search term and a search string match.
+   *
+   * @param {array} searchWords An array of words (should be lowercased).
+   * @param {array} textWords An array of words (should be lowercased).
+   * @return {boolean} Whether there is a match.
+   */
   matchesSearch(searchWords, textWords) {
     for (var i = 0; i < searchWords.length; i += 1) {
       for (var j = 0; j < textWords.length; j += 1) {
@@ -153,7 +174,28 @@ class RowSorter {
     return false;
   }
 
-  addDirectionalArrow() {
+  /**
+   * The callback that sorts rows in ascending or descending order by a specified column.
+   * @param {Object} a First row.
+   * @param {Object} b Second row.
+   * @return {Number} Zero, -1, or 1;
+   */
+  columnUSort(a, b) {
+    if (a.data[this.columnToSortBy] === b.data[this.columnToSortBy]) {
+      return 0;
+    }
+
+    if (this.sortDirection === 'asc') {
+      return a.data[this.columnToSortBy] < b.data[this.columnToSortBy] ? -1 : 1;
+    }
+
+    return a.data[this.columnToSortBy] > b.data[this.columnToSortBy] ? -1 : 1;
+  }
+
+  /**
+   * Clears the directional arrow and re-adds it to the active row.
+   */
+  renderDirectionalArrow() {
     this.columns.forEach(column => {
       const arrow = column.querySelector(`.${ARROW_CLASS}`);
       if (arrow) {
@@ -172,18 +214,9 @@ class RowSorter {
     column.appendChild(arrowContainer);
   }
 
-  columnUSort(a, b) {
-    if (a.data[this.columnToSortBy] === b.data[this.columnToSortBy]) {
-      return 0;
-    }
-
-    if (this.sortDirection === 'asc') {
-      return a.data[this.columnToSortBy] < b.data[this.columnToSortBy] ? -1 : 1;
-    }
-
-    return a.data[this.columnToSortBy] > b.data[this.columnToSortBy] ? -1 : 1;
-  }
-
+  /**
+   * Filters and orders the rows.
+   */
   render() {
     this.container.innerHTML = '';
     this.container.append(
@@ -211,7 +244,7 @@ class RowSorter {
       )
     );
 
-    this.addDirectionalArrow();
+    this.renderDirectionalArrow();
   }
 }
 

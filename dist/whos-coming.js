@@ -191,9 +191,6 @@ var RowSorter = function () {
         this.columns = [].concat(_toConsumableArray(this.keyRow.querySelectorAll('[' + COLUMN_DATA_ATTRIBUTE + ']')));
         this.columnToSortBy = this.columns[0].getAttribute(COLUMN_DATA_ATTRIBUTE);
         this.rows = RowSorter.makeRows();
-        this.originalRows = this.rows.map(function (item) {
-          return Object.assign({}, item);
-        });
       } catch (e) {
         // Do nothing.
       }
@@ -211,6 +208,11 @@ var RowSorter = function () {
       this.maybeStartSelect();
       this.render();
     }
+
+    /**
+     * Sets up the search if a search input is found.
+     */
+
   }, {
     key: 'maybeStartSearch',
     value: function maybeStartSearch() {
@@ -221,6 +223,11 @@ var RowSorter = function () {
         (0, _startSearch.startSearch)({ onChange: this.setSearchTerm, searchInput: searchInput });
       }
     }
+
+    /**
+     * Sets up the select input if the input is found.
+     */
+
   }, {
     key: 'maybeStartSelect',
     value: function maybeStartSelect() {
@@ -235,18 +242,33 @@ var RowSorter = function () {
         });
       }
     }
+
+    /**
+     * Sets the active option (the select field value) and rerenders.
+     */
+
   }, {
     key: 'setActiveOption',
     value: function setActiveOption(option) {
       this.activeOption = option;
       this.render();
     }
+
+    /**
+     * Sets the search term and rerenders.
+     */
+
   }, {
     key: 'setSearchTerm',
     value: function setSearchTerm(searchTerm) {
       this.searchTerm = searchTerm;
       this.render();
     }
+
+    /**
+     * Sets the column to sort by and the sort direction and rerenders.
+     */
+
   }, {
     key: 'setSortColumn',
     value: function setSortColumn(column) {
@@ -261,6 +283,15 @@ var RowSorter = function () {
 
       this.render();
     }
+
+    /**
+     * Checks whether a search term and a search string match.
+     *
+     * @param {array} searchWords An array of words (should be lowercased).
+     * @param {array} textWords An array of words (should be lowercased).
+     * @return {boolean} Whether there is a match.
+     */
+
   }, {
     key: 'matchesSearch',
     value: function matchesSearch(searchWords, textWords) {
@@ -278,9 +309,35 @@ var RowSorter = function () {
 
       return false;
     }
+
+    /**
+     * The callback that sorts rows in ascending or descending order by a specified column.
+     * @param {Object} a First row.
+     * @param {Object} b Second row.
+     * @return {Number} Zero, -1, or 1;
+     */
+
   }, {
-    key: 'addDirectionalArrow',
-    value: function addDirectionalArrow() {
+    key: 'columnUSort',
+    value: function columnUSort(a, b) {
+      if (a.data[this.columnToSortBy] === b.data[this.columnToSortBy]) {
+        return 0;
+      }
+
+      if (this.sortDirection === 'asc') {
+        return a.data[this.columnToSortBy] < b.data[this.columnToSortBy] ? -1 : 1;
+      }
+
+      return a.data[this.columnToSortBy] > b.data[this.columnToSortBy] ? -1 : 1;
+    }
+
+    /**
+     * Clears the directional arrow and re-adds it to the active row.
+     */
+
+  }, {
+    key: 'renderDirectionalArrow',
+    value: function renderDirectionalArrow() {
       this.columns.forEach(function (column) {
         var arrow = column.querySelector('.' + ARROW_CLASS);
         if (arrow) {
@@ -295,19 +352,11 @@ var RowSorter = function () {
       var column = document.querySelector('[' + COLUMN_DATA_ATTRIBUTE + '="' + this.columnToSortBy + '"]');
       column.appendChild(arrowContainer);
     }
-  }, {
-    key: 'columnUSort',
-    value: function columnUSort(a, b) {
-      if (a.data[this.columnToSortBy] === b.data[this.columnToSortBy]) {
-        return 0;
-      }
 
-      if (this.sortDirection === 'asc') {
-        return a.data[this.columnToSortBy] < b.data[this.columnToSortBy] ? -1 : 1;
-      }
+    /**
+     * Filters and orders the rows.
+     */
 
-      return a.data[this.columnToSortBy] > b.data[this.columnToSortBy] ? -1 : 1;
-    }
   }, {
     key: 'render',
     value: function render() {
@@ -331,7 +380,7 @@ var RowSorter = function () {
         return row.element;
       }))));
 
-      this.addDirectionalArrow();
+      this.renderDirectionalArrow();
     }
   }]);
 
