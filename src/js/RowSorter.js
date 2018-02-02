@@ -175,7 +175,7 @@ class RowSorter {
   }
 
   /**
-   * The callback that sorts rows in ascending or descending order by a specified column.
+   * Callback that sorts rows by a specified column.
    * @param {Object} a First row.
    * @param {Object} b Second row.
    * @return {Number} Zero, -1, or 1;
