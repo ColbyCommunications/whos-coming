@@ -53,6 +53,23 @@
   height: 1.5rem;
 }
 
+.whos-coming__search-select {
+  display: flex;
+  justify-content: space-between;
+}
+
+.whos-coming__select-container select {
+  height: 2rem;
+  padding: 0.5rem;
+  font-size: 1rem;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 2px;
+}
+
+.whos-coming__select-container option {
+  padding: 0.5rem;
+}
+
 .whos-coming__search span {
   position: absolute;
   left: -10000%;

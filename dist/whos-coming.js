@@ -68,7 +68,7 @@
 /***/ (function(module, exports, __webpack_require__) {
 
 __webpack_require__(1);
-module.exports = __webpack_require__(6);
+module.exports = __webpack_require__(8);
 
 
 /***/ }),
@@ -108,15 +108,15 @@ Object.defineProperty(exports, "__esModule", {
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _debounce = __webpack_require__(3);
+var _startSelect = __webpack_require__(3);
 
-var _debounce2 = _interopRequireDefault(_debounce);
+var _startSearch = __webpack_require__(4);
 
-var _upArrow = __webpack_require__(4);
+var _startSortByColumn = __webpack_require__(5);
 
-var _downArrow = __webpack_require__(5);
+var _upArrow = __webpack_require__(6);
 
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+var _downArrow = __webpack_require__(7);
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
@@ -124,12 +124,20 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
+var KEY_ROW_SELECTOR = '.whos-coming__row--key';
+var NOT_KEY_ROW_SELECTOR = '.whos-coming__row:not(.whos-coming__row--key)';
+var COLUMN_FIELD_DATA_ATTRIBUTE = 'data-whos-coming-data';
+var COLUMN_DATA_ATTRIBUTE = 'data-whos-coming-column';
+var SEARCH_DATA_ATTRIBUTE = 'data-whos-coming-search';
+var SELECT_DATA_ATTRIBUTE = 'data-whos-coming-select';
+var ARROW_CLASS = 'whos-coming__arrow';
+
 var RowSorter = function () {
 
   /**
-   * Initiate and swallow errors.
+   * Class constructor.
    *
-   * @param {HTMLElement} container The root.
+   * @param {HTMLElement} container The HTML root element.
    */
 
 
@@ -145,9 +153,15 @@ var RowSorter = function () {
 
     _classCallCheck(this, RowSorter);
 
-    this.addColumnClickListener = this.addColumnClickListener.bind(this);
     this.columnUSort = this.columnUSort.bind(this);
-    this.search = (0, _debounce2.default)(this.search.bind(this), 100);
+    this.setActiveOption = this.setActiveOption.bind(this);
+    this.setSearchTerm = this.setSearchTerm.bind(this);
+    this.setSortColumn = this.setSortColumn.bind(this);
+    this.activeOption = null;
+    this.searchField = null;
+    this.selectField = null;
+    this.searchTerm = null;
+    this.sortDirection = 'asc';
 
     this.shouldStart = function () {
       return _this.keyRow && _this.rows && _this.columns;
@@ -155,11 +169,12 @@ var RowSorter = function () {
 
     this.container = container;
     this.setUp();
-    this.rows = RowSorter.makeRows();
-    this.originalRows = this.rows.map(function (item) {
-      return Object.assign({}, item);
-    });
   }
+
+  /**
+   * Initializes class variables.
+   */
+
 
   /**
    * Assembles an array of objects with data for all the rows.
@@ -172,10 +187,13 @@ var RowSorter = function () {
     key: 'setUp',
     value: function setUp() {
       try {
-        this.keyRow = this.container.querySelector('.whos-coming__row--key');
-        this.columns = [].concat(_toConsumableArray(this.keyRow.querySelectorAll('[data-whos-coming-column]')));
-        this.sortDirection = 'desc'; // Will be flipped on the initialization run.
-        this.sortColumn = this.columns[0].getAttribute('data-whos-coming-column');
+        this.keyRow = this.container.querySelector(KEY_ROW_SELECTOR);
+        this.columns = [].concat(_toConsumableArray(this.keyRow.querySelectorAll('[' + COLUMN_DATA_ATTRIBUTE + ']')));
+        this.columnToSortBy = this.columns[0].getAttribute(COLUMN_DATA_ATTRIBUTE);
+        this.rows = RowSorter.makeRows();
+        this.originalRows = this.rows.map(function (item) {
+          return Object.assign({}, item);
+        });
       } catch (e) {
         // Do nothing.
       }
@@ -188,27 +206,60 @@ var RowSorter = function () {
   }, {
     key: 'start',
     value: function start() {
-      this.columns.forEach(this.addColumnClickListener);
-      this.sortByColumn(this.columns[0]);
+      (0, _startSortByColumn.startSortByColumn)({ columns: this.columns, onChange: this.setSortColumn });
+      this.maybeStartSearch();
+      this.maybeStartSelect();
+      this.render();
+    }
+  }, {
+    key: 'maybeStartSearch',
+    value: function maybeStartSearch() {
+      var searchInput = document.querySelector('[' + SEARCH_DATA_ATTRIBUTE + ']');
 
-      this.searchInput = document.querySelector('[data-whos-coming-search]');
-      if (this.searchInput) {
-        this.startSearch();
+      if (searchInput) {
+        this.searchField = searchInput.getAttribute(SEARCH_DATA_ATTRIBUTE);
+        (0, _startSearch.startSearch)({ onChange: this.setSearchTerm, searchInput: searchInput });
       }
     }
   }, {
-    key: 'startSearch',
-    value: function startSearch() {
-      var _this2 = this;
+    key: 'maybeStartSelect',
+    value: function maybeStartSelect() {
+      var select = document.querySelector('[' + SELECT_DATA_ATTRIBUTE + ']');
+      if (select) {
+        this.selectField = select.getAttribute(SELECT_DATA_ATTRIBUTE);
+        (0, _startSelect.startSelect)({
+          select: select,
+          selectField: this.selectField,
+          onChange: this.setActiveOption,
+          rows: this.rows
+        });
+      }
+    }
+  }, {
+    key: 'setActiveOption',
+    value: function setActiveOption(option) {
+      this.activeOption = option;
+      this.render();
+    }
+  }, {
+    key: 'setSearchTerm',
+    value: function setSearchTerm(searchTerm) {
+      this.searchTerm = searchTerm;
+      this.render();
+    }
+  }, {
+    key: 'setSortColumn',
+    value: function setSortColumn(column) {
+      var field = column.getAttribute(COLUMN_DATA_ATTRIBUTE);
 
-      this.searchField = this.searchInput.getAttribute('data-whos-coming-search');
-      this.searchInput.addEventListener('keyup', this.search);
-      this.searchInput.addEventListener('search', function (event) {
-        if (!event.target.value.trim()) {
-          _this2.resetSearch();
-          return;
-        }
-      });
+      if (field === this.columnToSortBy) {
+        this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+      } else {
+        this.sortDirection = 'asc';
+        this.columnToSortBy = field;
+      }
+
+      this.render();
     }
   }, {
     key: 'matchesSearch',
@@ -228,108 +279,59 @@ var RowSorter = function () {
       return false;
     }
   }, {
-    key: 'resetSearch',
-    value: function resetSearch(event) {
-      this.setUp();
-      this.sortByColumn(this.columns[0]);
-    }
-  }, {
-    key: 'search',
-    value: function search(event) {
-      var _this3 = this;
-
-      if (!event.target.value.trim()) {
-        this.resetSearch();
-        return;
-      }
-
-      var words = event.target.value.toLowerCase().split(' ');
-
-      this.rerender(this.rows.filter(function (row) {
-        return _this3.matchesSearch(words, row.data[_this3.searchField].toLowerCase().split(' '));
-      }));
-    }
-  }, {
-    key: 'addColumnClickListener',
-    value: function addColumnClickListener(column) {
-      var _this4 = this;
-
-      column.addEventListener('click', function () {
-        return _this4.sortByColumn(column);
-      });
-    }
-  }, {
-    key: 'rerender',
-    value: function rerender(rows) {
-      var _container;
-
-      this.container.innerHTML = '';
-      (_container = this.container).append.apply(_container, _toConsumableArray([this.keyRow].concat(rows.map(function (row) {
-        return row.element;
-      }))));
-    }
-  }, {
-    key: 'clearDirectionalArrows',
-    value: function clearDirectionalArrows() {
+    key: 'addDirectionalArrow',
+    value: function addDirectionalArrow() {
       this.columns.forEach(function (column) {
-        var arrow = column.querySelector('.whos-coming__arrow');
+        var arrow = column.querySelector('.' + ARROW_CLASS);
         if (arrow) {
           column.removeChild(arrow);
         }
       });
-    }
-  }, {
-    key: 'addDirectionalArrow',
-    value: function addDirectionalArrow(column) {
+
       var arrowContainer = document.createElement('SPAN');
-      arrowContainer.classList.add('whos-coming__arrow');
+      arrowContainer.classList.add(ARROW_CLASS);
       arrowContainer.innerHTML = this.sortDirection === 'asc' ? _downArrow.downArrow : _upArrow.upArrow;
+
+      var column = document.querySelector('[' + COLUMN_DATA_ATTRIBUTE + '="' + this.columnToSortBy + '"]');
       column.appendChild(arrowContainer);
-    }
-  }, {
-    key: 'sortByColumn',
-    value: function sortByColumn(column) {
-      this.setUpSortByColumn(column);
-      this.clearDirectionalArrows();
-      this.rows = this.getSortedRows();
-      this.rerender(this.rows);
-      this.addDirectionalArrow(column);
-    }
-  }, {
-    key: 'setUpSortByColumn',
-    value: function setUpSortByColumn(column) {
-      var sortColumn = column.getAttribute('data-whos-coming-column');
-
-      if (this.sortColumn === sortColumn) {
-        this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
-      } else {
-        this.sortDirection = 'asc';
-      }
-
-      this.sortColumn = sortColumn;
     }
   }, {
     key: 'columnUSort',
     value: function columnUSort(a, b) {
-      if (a.data[this.sortColumn] === b.data[this.sortByColumn]) {
+      if (a.data[this.columnToSortBy] === b.data[this.columnToSortBy]) {
         return 0;
       }
 
       if (this.sortDirection === 'asc') {
-        return a.data[this.sortColumn] < b.data[this.sortColumn] ? -1 : 1;
+        return a.data[this.columnToSortBy] < b.data[this.columnToSortBy] ? -1 : 1;
       }
 
-      return a.data[this.sortColumn] > b.data[this.sortColumn] ? -1 : 1;
+      return a.data[this.columnToSortBy] > b.data[this.columnToSortBy] ? -1 : 1;
     }
   }, {
-    key: 'getSortedRows',
-    value: function getSortedRows() {
-      var sortedRows = this.rows.map(function (item) {
-        return item;
-      });
-      sortedRows.sort(this.columnUSort);
+    key: 'render',
+    value: function render() {
+      var _container,
+          _this2 = this;
 
-      return sortedRows;
+      this.container.innerHTML = '';
+      (_container = this.container).append.apply(_container, _toConsumableArray([this.keyRow].concat(this.rows.filter(function (row) {
+        if (!_this2.activeOption) {
+          return true;
+        }
+
+        return row.data[_this2.selectField] === _this2.activeOption;
+      }).filter(function (row) {
+        if (!_this2.searchTerm) {
+          return true;
+        }
+
+        return _this2.matchesSearch(_this2.searchTerm.toLowerCase().split(' '), row.data[_this2.searchField].toLowerCase().split(' '));
+      }).sort(this.columnUSort).map(function (row) {
+        return row.element;
+      }))));
+
+      this.addDirectionalArrow();
     }
   }]);
 
@@ -337,13 +339,13 @@ var RowSorter = function () {
 }();
 
 RowSorter.getRowData = function (element) {
-  return [].concat(_toConsumableArray(element.querySelectorAll('[data-whos-coming-data]'))).reduce(function (data, span) {
-    return Object.assign({}, data, _defineProperty({}, span.getAttribute('data-whos-coming-data'), span.innerHTML.trim()));
+  return [].concat(_toConsumableArray(element.querySelectorAll('[' + COLUMN_FIELD_DATA_ATTRIBUTE + ']'))).reduce(function (data, span) {
+    return Object.assign({}, data, _defineProperty({}, span.getAttribute(COLUMN_FIELD_DATA_ATTRIBUTE), span.innerHTML.trim()));
   }, {});
 };
 
 RowSorter.makeRows = function () {
-  return [].concat(_toConsumableArray(document.querySelectorAll('.whos-coming__row:not(.whos-coming__row--key)'))).map(function (element) {
+  return [].concat(_toConsumableArray(document.querySelectorAll(NOT_KEY_ROW_SELECTOR))).map(function (element) {
     return {
       element: element,
       data: RowSorter.getRowData(element)
@@ -360,75 +362,115 @@ exports.default = RowSorter;
 "use strict";
 
 
-/**
- * Returns a function, that, as long as it continues to be invoked, will not
- * be triggered. The function will be called after it stops being called for
- * N milliseconds. If `immediate` is passed, trigger the function on the
- * leading edge, instead of the trailing. The function also has a property 'clear' 
- * that is a function which will clear the timer to prevent previously scheduled executions. 
- *
- * @source underscore.js
- * @see http://unscriptable.com/2009/03/20/debouncing-javascript-methods/
- * @param {Function} function to wrap
- * @param {Number} timeout in ms (`100`)
- * @param {Boolean} whether to execute at the beginning (`false`)
- * @api public
- */
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
 
-module.exports = function debounce(func, wait, immediate) {
-  var timeout, args, context, timestamp, result;
-  if (null == wait) wait = 100;
+function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
-  function later() {
-    var last = Date.now() - timestamp;
+var addOptionsElements = function addOptionsElements(_ref) {
+  var options = _ref.options,
+      select = _ref.select;
 
-    if (last < wait && last >= 0) {
-      timeout = setTimeout(later, wait - last);
-    } else {
-      timeout = null;
-      if (!immediate) {
-        result = func.apply(context, args);
-        context = args = null;
-      }
-    }
-  };
+  options.forEach(function (option) {
+    var optionElement = document.createElement('OPTION');
+    optionElement.setAttribute('value', option);
+    optionElement.innerHTML = option;
+    select.append(optionElement);
+  });
+};
 
-  var debounced = function debounced() {
-    context = this;
-    args = arguments;
-    timestamp = Date.now();
-    var callNow = immediate && !timeout;
-    if (!timeout) timeout = setTimeout(later, wait);
-    if (callNow) {
-      result = func.apply(context, args);
-      context = args = null;
+var getOptions = function getOptions(_ref2) {
+  var rows = _ref2.rows,
+      selectField = _ref2.selectField;
+  return [].concat(_toConsumableArray(rows)).reduce(function (options, row) {
+    if (options.indexOf(row.data[selectField]) === -1) {
+      options.push(row.data[selectField]);
     }
 
-    return result;
-  };
+    return options;
+  }, []);
+};
 
-  debounced.clear = function () {
-    if (timeout) {
-      clearTimeout(timeout);
-      timeout = null;
-    }
-  };
+var handleSelectChange = function handleSelectChange(_ref3) {
+  var select = _ref3.select,
+      onChange = _ref3.onChange;
 
-  debounced.flush = function () {
-    if (timeout) {
-      result = func.apply(context, args);
-      context = args = null;
+  var activeOption = select.value && select.value.indexOf('--') === -1 ? select.value : null;
+  onChange(activeOption);
+};
 
-      clearTimeout(timeout);
-      timeout = null;
-    }
-  };
+var startSelect = exports.startSelect = function startSelect(_ref4) {
+  var selectField = _ref4.selectField,
+      select = _ref4.select,
+      onChange = _ref4.onChange,
+      rows = _ref4.rows;
 
-  return debounced;
+  var options = getOptions({ rows: rows, selectField: selectField });
+  options.sort();
+
+  addOptionsElements({ options: options, select: select });
+
+  select.addEventListener('change', function () {
+    handleSelectChange({ select: select, onChange: onChange });
+  });
 };
 
 /***/ }),
 /* 4 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+var startSearch = exports.startSearch = function startSearch(_ref) {
+  var onChange = _ref.onChange,
+      searchInput = _ref.searchInput;
+
+  searchInput.addEventListener('keyup', function (event) {
+    onChange(event.target.value);
+  });
+
+  searchInput.addEventListener('search', function (event) {
+    if (!event.target.value.trim()) {
+      onChange(null);
+    }
+  });
+};
+
+/***/ }),
+/* 5 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+var addColumnClickListener = function addColumnClickListener(_ref) {
+  var column = _ref.column,
+      onChange = _ref.onChange;
+
+  column.addEventListener('click', function () {
+    return onChange(column);
+  });
+};
+
+var startSortByColumn = exports.startSortByColumn = function startSortByColumn(_ref2) {
+  var columns = _ref2.columns,
+      onChange = _ref2.onChange;
+
+  columns.forEach(function (column) {
+    return addColumnClickListener({ column: column, onChange: onChange });
+  });
+};
+
+/***/ }),
+/* 6 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -442,7 +484,7 @@ Object.defineProperty(exports, "__esModule", {
 var upArrow = exports.upArrow = "<svg width=\"1792\" height=\"1792\" viewBox=\"0 0 1792 1792\">\n<path d=\"M1395 1184q0 13-10 23l-50 50q-10 10-23 10t-23-10l-393-393-393 393q-10 10-23 10t-23-10l-50-50q-10-10-10-23t10-23l466-466q10-10 23-10t23 10l466 466q10 10 10 23z\" fill=\"currentColor\"/>\n</svg>";
 
 /***/ }),
-/* 5 */
+/* 7 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -455,7 +497,7 @@ Object.defineProperty(exports, "__esModule", {
 var downArrow = exports.downArrow = "<svg width=\"1792\" height=\"1792\" viewBox=\"0 0 1792 1792\" class=\"down-arrow-svg\">\n<title>Open</title>\n<path d=\"M1395 736q0 13-10 23l-466 466q-10 10-23 10t-23-10l-466-466q-10-10-10-23t10-23l50-50q10-10 23-10t23 10l393 393 393-393q10-10 23-10t23 10l50 50q10 10 10 23z\" fill=\"currentColor\"/>\n</svg>";
 
 /***/ }),
-/* 6 */
+/* 8 */
 /***/ (function(module, exports) {
 
 // removed by extract-text-webpack-plugin
