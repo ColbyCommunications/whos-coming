@@ -7,7 +7,6 @@
 
 namespace ColbyComms\WhosComing;
 
-use Carbon_Fields\Helper\Helper as Carbon;
 use ColbyComms\WhosComing\WpFunctions as WP;
 
 /**
@@ -15,12 +14,19 @@ use ColbyComms\WhosComing\WpFunctions as WP;
  */
 class DataFetcher {
 	/**
+	 * Name of the filter to override the data.
+	 *
+	 * @var string
+	 */
+	const DATA_FILTER = WhosComing::FILTER_PREFIX . 'data';
+
+	/**
 	 * Undocumented function
 	 *
 	 * @return array The fetched data.
 	 */
 	public static function fetch() : array {
-		$data = WP::apply_filters( 'whos_coming__data', [] );
+		$data = WP::apply_filters( self::DATA_FILTER, [] );
 
 		if ( ! empty( $data ) ) {
 			return $data;
@@ -34,8 +40,8 @@ class DataFetcher {
 	 * Adds hooks.
 	 */
 	public function __construct() {
-		$this->source_type = Carbon::get_theme_option( 'whos_coming__data_source' );
-		$this->data_format = Carbon::get_theme_option( 'whos_coming__data_format' );
+		$this->source_type = ThemeOptions::get( ThemeOptions::DATA_SOURCE_KEY );
+		$this->data_format = ThemeOptions::get( ThemeOptions::DATA_FORMAT_KEY );
 	}
 
 	/**
@@ -121,7 +127,7 @@ class DataFetcher {
 	 * @return string The data.
 	 */
 	public function get_data_from_text() : string {
-		return Carbon::get_theme_option( 'whos_coming__data' );
+		return ThemeOptions::get( ThemeOptions::DATA_KEY );
 	}
 
 	/**
@@ -130,7 +136,7 @@ class DataFetcher {
 	 * @return string The data.
 	 */
 	public function get_data_from_url() : string {
-		$url = Carbon::get_theme_option( 'whos_coming__data_url' );
+		$url = ThemeOptions::get( ThemeOptions::DATA_URL_KEY );
 		$response = WP::wp_remote_get( $url );
 
 		if ( WP::is_wp_error( $response ) ) {

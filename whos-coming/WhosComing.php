@@ -7,7 +7,6 @@
 
 namespace ColbyComms\WhosComing;
 
-use Carbon_Fields\Helper\Helper as Carbon;
 use ColbyComms\WhosComing\{DataFetcher, WpFunctions as WP};
 
 /**
@@ -15,11 +14,67 @@ use ColbyComms\WhosComing\{DataFetcher, WpFunctions as WP};
  */
 class WhosComing {
 	/**
+	 * Whether to load minified scripts and styles.
+	 *
+	 * @var bool
+	 */
+	const PROD = false;
+
+	/**
+	 * The vendor name for this package.
+	 *
+	 * @var string
+	 */
+	const VENDOR = 'colbycomms';
+
+	/**
+	 * The plugin version number.
+	 *
+	 * @var string
+	 */
+	const VERSION = '1.0.0';
+
+	/**
+	 * The plugin text domain.
+	 *
+	 * @var string
+	 */
+	const TEXT_DOMAIN = 'whos-coming';
+
+	/**
+	 * String to prepend to all filters.
+	 *
+	 * @var string
+	 */
+	const FILTER_PREFIX = self::VENDOR . '__whos_coming__';
+
+	/**
+	 * The  filter to override the dist directory.
+	 *
+	 * @var string
+	 */
+	const DIST_FILTER = self::FILTER_PREFIX . 'dist';
+
+	/**
+	 * The filter to override whether to enqueue this plugin's style.
+	 *
+	 * @var string
+	 */
+	const ENQUEUE_STYLE_FILTER = self::FILTER_PREFIX . 'enqueue_style';
+
+	/**
+	 * The filter to override whether to enqueue this plugin's script.
+	 *
+	 * @var string
+	 */
+	const ENQUEUE_SCRIPT_FILTER = self::FILTER_PREFIX . 'enqueue_script';
+
+	/**
 	 * The shortcode tag.
 	 *
 	 * @var string
 	 */
-	public static $shortcode = 'whos-coming';
+	const SHORTCODE_TAG = 'whos-coming';
 
 	/**
 	 * Add hook callbacks.
@@ -27,9 +82,9 @@ class WhosComing {
 	public function __construct() {
 		WP::add_action( 'template_redirect', [ $this, 'set_up' ] );
 
-		if ( ! WP::shortcode_exists( self::$shortcode ) ) {
+		if ( ! WP::shortcode_exists( self::SHORTCODE_TAG ) ) {
 			WP::add_shortcode(
-				self::$shortcode,
+				self::SHORTCODE_TAG,
 				[ $this, 'whos_coming_shortcode' ]
 			);
 		}
@@ -47,7 +102,7 @@ class WhosComing {
 			&& ! empty( $post )
 			&& is_object( $post )
 			&& ! empty( $post->post_content )
-			&& WP::has_shortcode( $post->post_content, self::$shortcode );
+			&& WP::has_shortcode( $post->post_content, self::SHORTCODE_TAG );
 	}
 
 	/**
@@ -62,8 +117,9 @@ class WhosComing {
 
 		WP::add_action( 'wp_enqueue_scripts', [ __CLASS__, 'enqueue_scripts_and_styles' ] );
 		$this->data = self::get_data();
-		$this->fields = Carbon::get_theme_option( 'whos_coming__display_fields' );
-		$this->search_field = Carbon::get_theme_option( 'whos_coming__search_field' ) ?: '';
+		$this->fields = ThemeOptions::get( ThemeOptions::DISPLAY_FIELDS_KEY );
+		$this->search_field = ThemeOptions::get( ThemeOptions::SEARCH_FIELD_KEY );
+		$this->select_field = ThemeOptions::get( ThemeOptions::SELECT_FIELD_KEY );
 	}
 
 	/**
@@ -83,7 +139,7 @@ class WhosComing {
 	public function whos_coming_shortcode() : string {
 		ob_start();
 
-		self::render( $this->data, $this->fields, $this->search_field );
+		self::render( $this->data, $this->fields, $this->search_field, $this->select_field );
 
 		return ob_get_clean();
 	}
@@ -99,10 +155,11 @@ class WhosComing {
 			return;
 		}
 
+		$field_text = str_replace( '_', ' ', $field );
 		?>
 <label class="whos-coming__search">
 	<span>Search</span>
-	<input type="search" placeholder="Search" data-whos-coming-search="<?php echo WP::esc_attr( $field ); ?>" />
+	<input type="search" placeholder="Search by <?php echo $field_text; ?>" data-whos-coming-search="<?php echo WP::esc_attr( $field ); ?>" />
 </label>
 		<?php
 	}
@@ -132,11 +189,27 @@ class WhosComing {
 	 * @param array  $data Items to iterate through.
 	 * @param array  $fields Fields to include.
 	 * @param string $search_field The field to provide a search box for.
+	 * @param string $select_field The field to provide a select input for.
 	 * @return void
 	 */
-	public static function render( array $data = [], array $fields = [], string $search_field = '' ) : void {
+	public static function render( array $data = [], array $fields = [], string $search_field = '', string $select_field = '' ) : void {
 		?>
-<?php self::render_search_field( $search_field ); ?>
+<?php if ( $search_field || $select_field ) : ?>
+<div class="whos-coming__search-select">
+	<?php if ( $search_field ) : ?>
+	<div class="whos-coming__search-container">
+		<?php self::render_search_field( $search_field ); ?>
+	</div>
+	<?php endif; ?>
+	<?php if ( $select_field ) : ?>
+	<div class="whos-coming__select-container">
+		<select name="whos-coming__select" data-whos-coming-select="<?php echo $select_field; ?>">
+			<option>-- Select <?php echo str_replace( '_', ' ', $select_field ); ?> --</option>
+		</select>
+	</div>
+	<?php endif; ?>
+</div>
+<?php endif; ?>
 <div data-whos-coming class="whos-coming">
 	<?php self::render_key_bar( $fields ); ?>
 	<?php foreach ( array_filter( $data ) as $person ) : ?>
@@ -162,18 +235,18 @@ class WhosComing {
 	 */
 	public static function enqueue_scripts_and_styles() : void {
 		$dist = self::get_dist_directory();
-		$min = defined( 'PROD' ) && PROD ? '.min' : '';
+		$min = self::PROD ? '.min' : '';
 		/**
 		 * Filters whether to enqueue this plugin's script.
 		 *
 		 * @param bool Yes or no.
 		 */
-		if ( apply_filters( 'colbycomms__whos_coming__enqueue_script', true ) === true ) {
+		if ( apply_filters( self::ENQUEUE_SCRIPT_FILTER, true ) === true ) {
 			wp_enqueue_script(
-				TEXT_DOMAIN,
-				"{$dist}whos-coming$min.js",
+				self::TEXT_DOMAIN,
+				$dist . self::TEXT_DOMAIN . "$min.js",
 				[],
-				VERSION,
+				self::VERSION,
 				true
 			);
 		}
@@ -183,12 +256,12 @@ class WhosComing {
 		 *
 		 * @param bool Yes or no.
 		 */
-		if ( apply_filters( 'colbycomms__whos_coming__enqueue_style', true ) === true ) {
+		if ( apply_filters( self::ENQUEUE_STYLE_FILTER, true ) === true ) {
 			wp_enqueue_style(
-				TEXT_DOMAIN,
-				"{$dist}whos-coming$min.css",
+				self::TEXT_DOMAIN,
+				$dist . self::TEXT_DOMAIN . "$min.css",
 				[],
-				VERSION
+				self::VERSION
 			);
 		}
 	}
@@ -206,7 +279,7 @@ class WhosComing {
 		 *
 		 * @param string The URL.
 		 */
-		$dist = apply_filters( 'colbycomms__whos_coming__dist', '' );
+		$dist = apply_filters( self::DIST_FILTER, '' );
 
 		if ( ! empty( $dist ) ) {
 			return $dist;
@@ -216,6 +289,6 @@ class WhosComing {
 			return plugin_dir_url( dirname( __DIR__ ) . '/index.php' ) . '/dist/';
 		}
 
-		return get_template_directory_uri() . '/vendor/colbycomms/whos-coming/dist/';
+		return get_template_directory_uri() . '/vendor/' . self::VENDOR . '/' . self::TEXT_DOMAIN . '/dist/';
 	}
 }

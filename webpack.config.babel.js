@@ -24,7 +24,12 @@ const main = () => {
       rules: [
         {
           test: /\.js$/,
-          use: ['babel-loader'],
+          use: {
+            loader: 'babel-loader',
+            options: {
+              presets: ['env', 'stage-0'],
+            },
+          },
         },
         {
           test: /\.css$/,

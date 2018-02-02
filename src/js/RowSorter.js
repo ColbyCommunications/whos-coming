@@ -1,12 +1,28 @@
-import debounce from 'debounce';
-
+import { startSelect } from './startSelect';
+import { startSearch } from './startSearch';
+import { startSortByColumn } from './startSortByColumn';
 import { upArrow } from './upArrow';
 import { downArrow } from './downArrow';
 
+const KEY_ROW_SELECTOR = '.whos-coming__row--key';
+const NOT_KEY_ROW_SELECTOR = '.whos-coming__row:not(.whos-coming__row--key)';
+const COLUMN_FIELD_DATA_ATTRIBUTE = 'data-whos-coming-data';
+const COLUMN_DATA_ATTRIBUTE = 'data-whos-coming-column';
+const SEARCH_DATA_ATTRIBUTE = 'data-whos-coming-search';
+const SELECT_DATA_ATTRIBUTE = 'data-whos-coming-select';
+const ARROW_CLASS = 'whos-coming__arrow';
+
 class RowSorter {
-  addColumnClickListener = this.addColumnClickListener.bind(this);
   columnUSort = this.columnUSort.bind(this);
-  search = debounce(this.search.bind(this), 100);
+  setActiveOption = this.setActiveOption.bind(this);
+  setSearchTerm = this.setSearchTerm.bind(this);
+  setSortColumn = this.setSortColumn.bind(this);
+
+  activeOption = null;
+  searchField = null;
+  selectField = null;
+  searchTerm = null;
+  sortDirection = 'asc';
 
   /**
    * Gathers data attributes from inside a row.
@@ -16,10 +32,12 @@ class RowSorter {
    *                  and innerHTML as values.
    */
   static getRowData = element =>
-    [...element.querySelectorAll('[data-whos-coming-data]')].reduce(
+    [...element.querySelectorAll(`[${COLUMN_FIELD_DATA_ATTRIBUTE}]`)].reduce(
       (data, span) =>
         Object.assign({}, data, {
-          [span.getAttribute('data-whos-coming-data')]: span.innerHTML.trim(),
+          [span.getAttribute(
+            COLUMN_FIELD_DATA_ATTRIBUTE
+          )]: span.innerHTML.trim(),
         }),
       {}
     );
@@ -30,35 +48,33 @@ class RowSorter {
    * @return {array} The objects containing the elements and the data.
    */
   static makeRows = () =>
-    [
-      ...document.querySelectorAll(
-        '.whos-coming__row:not(.whos-coming__row--key)'
-      ),
-    ].map(element => ({
+    [...document.querySelectorAll(NOT_KEY_ROW_SELECTOR)].map(element => ({
       element,
       data: RowSorter.getRowData(element),
     }));
 
   /**
-   * Initiate and swallow errors.
+   * Class constructor.
    *
-   * @param {HTMLElement} container The root.
+   * @param {HTMLElement} container The HTML root element.
    */
   constructor(container) {
     this.container = container;
     this.setUp();
-    this.rows = RowSorter.makeRows();
-    this.originalRows = this.rows.map(item => Object.assign({}, item));
   }
 
+  /**
+   * Initializes class variables.
+   */
   setUp() {
     try {
-      this.keyRow = this.container.querySelector('.whos-coming__row--key');
+      this.keyRow = this.container.querySelector(KEY_ROW_SELECTOR);
       this.columns = [
-        ...this.keyRow.querySelectorAll('[data-whos-coming-column]'),
+        ...this.keyRow.querySelectorAll(`[${COLUMN_DATA_ATTRIBUTE}]`),
       ];
-      this.sortDirection = 'desc'; // Will be flipped on the initialization run.
-      this.sortColumn = this.columns[0].getAttribute('data-whos-coming-column');
+      this.columnToSortBy = this.columns[0].getAttribute(COLUMN_DATA_ATTRIBUTE);
+      this.rows = RowSorter.makeRows();
+      this.originalRows = this.rows.map(item => Object.assign({}, item));
     } catch (e) {
       // Do nothing.
     }
@@ -70,24 +86,55 @@ class RowSorter {
   shouldStart = () => this.keyRow && this.rows && this.columns;
 
   start() {
-    this.columns.forEach(this.addColumnClickListener);
-    this.sortByColumn(this.columns[0]);
+    startSortByColumn({ columns: this.columns, onChange: this.setSortColumn });
+    this.maybeStartSearch();
+    this.maybeStartSelect();
+    this.render();
+  }
 
-    this.searchInput = document.querySelector('[data-whos-coming-search]');
-    if (this.searchInput) {
-      this.startSearch();
+  maybeStartSearch() {
+    const searchInput = document.querySelector(`[${SEARCH_DATA_ATTRIBUTE}]`);
+
+    if (searchInput) {
+      this.searchField = searchInput.getAttribute(SEARCH_DATA_ATTRIBUTE);
+      startSearch({ onChange: this.setSearchTerm, searchInput });
     }
   }
 
-  startSearch() {
-    this.searchField = this.searchInput.getAttribute('data-whos-coming-search');
-    this.searchInput.addEventListener('keyup', this.search);
-    this.searchInput.addEventListener('search', event => {
-      if (!event.target.value.trim()) {
-        this.resetSearch();
-        return;
-      }
-    });
+  maybeStartSelect() {
+    const select = document.querySelector(`[${SELECT_DATA_ATTRIBUTE}]`);
+    if (select) {
+      this.selectField = select.getAttribute(SELECT_DATA_ATTRIBUTE);
+      startSelect({
+        select,
+        selectField: this.selectField,
+        onChange: this.setActiveOption,
+        rows: this.rows,
+      });
+    }
+  }
+
+  setActiveOption(option) {
+    this.activeOption = option;
+    this.render();
+  }
+
+  setSearchTerm(searchTerm) {
+    this.searchTerm = searchTerm;
+    this.render();
+  }
+
+  setSortColumn(column) {
+    const field = column.getAttribute(COLUMN_DATA_ATTRIBUTE);
+
+    if (field === this.columnToSortBy) {
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortDirection = 'asc';
+      this.columnToSortBy = field;
+    }
+
+    this.render();
   }
 
   matchesSearch(searchWords, textWords) {
@@ -106,94 +153,65 @@ class RowSorter {
     return false;
   }
 
-  resetSearch(event) {
-    this.setUp();
-    this.sortByColumn(this.columns[0]);
-  }
-
-  search(event) {
-    if (!event.target.value.trim()) {
-      this.resetSearch();
-      return;
-    }
-
-    const words = event.target.value.toLowerCase().split(' ');
-
-    this.rerender(
-      this.rows.filter(row => {
-        return this.matchesSearch(
-          words,
-          row.data[this.searchField].toLowerCase().split(' ')
-        );
-      })
-    );
-  }
-
-  addColumnClickListener(column) {
-    column.addEventListener('click', () => this.sortByColumn(column));
-  }
-
-  rerender(rows) {
-    this.container.innerHTML = '';
-    this.container.append(
-      ...[this.keyRow].concat(rows.map(row => row.element))
-    );
-  }
-
-  clearDirectionalArrows() {
+  addDirectionalArrow() {
     this.columns.forEach(column => {
-      const arrow = column.querySelector('.whos-coming__arrow');
+      const arrow = column.querySelector(`.${ARROW_CLASS}`);
       if (arrow) {
         column.removeChild(arrow);
       }
     });
-  }
 
-  addDirectionalArrow(column) {
     const arrowContainer = document.createElement('SPAN');
-    arrowContainer.classList.add('whos-coming__arrow');
+    arrowContainer.classList.add(ARROW_CLASS);
     arrowContainer.innerHTML =
       this.sortDirection === 'asc' ? downArrow : upArrow;
+
+    const column = document.querySelector(
+      `[${COLUMN_DATA_ATTRIBUTE}="${this.columnToSortBy}"]`
+    );
     column.appendChild(arrowContainer);
   }
 
-  sortByColumn(column) {
-    this.setUpSortByColumn(column);
-    this.clearDirectionalArrows();
-    this.rows = this.getSortedRows();
-    this.rerender(this.rows);
-    this.addDirectionalArrow(column);
-  }
-
-  setUpSortByColumn(column) {
-    const sortColumn = column.getAttribute('data-whos-coming-column');
-
-    if (this.sortColumn === sortColumn) {
-      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
-    } else {
-      this.sortDirection = 'asc';
-    }
-
-    this.sortColumn = sortColumn;
-  }
-
   columnUSort(a, b) {
-    if (a.data[this.sortColumn] === b.data[this.sortByColumn]) {
+    if (a.data[this.columnToSortBy] === b.data[this.columnToSortBy]) {
       return 0;
     }
 
     if (this.sortDirection === 'asc') {
-      return a.data[this.sortColumn] < b.data[this.sortColumn] ? -1 : 1;
+      return a.data[this.columnToSortBy] < b.data[this.columnToSortBy] ? -1 : 1;
     }
 
-    return a.data[this.sortColumn] > b.data[this.sortColumn] ? -1 : 1;
+    return a.data[this.columnToSortBy] > b.data[this.columnToSortBy] ? -1 : 1;
   }
 
-  getSortedRows() {
-    const sortedRows = this.rows.map(item => item);
-    sortedRows.sort(this.columnUSort);
+  render() {
+    this.container.innerHTML = '';
+    this.container.append(
+      ...[this.keyRow].concat(
+        this.rows
+          .filter(row => {
+            if (!this.activeOption) {
+              return true;
+            }
 
-    return sortedRows;
+            return row.data[this.selectField] === this.activeOption;
+          })
+          .filter(row => {
+            if (!this.searchTerm) {
+              return true;
+            }
+
+            return this.matchesSearch(
+              this.searchTerm.toLowerCase().split(' '),
+              row.data[this.searchField].toLowerCase().split(' ')
+            );
+          })
+          .sort(this.columnUSort)
+          .map(row => row.element)
+      )
+    );
+
+    this.addDirectionalArrow();
   }
 }
 

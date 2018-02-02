@@ -28,6 +28,6 @@ main {
 }
 </style>
 <main>
-	<?php echo WhosComing::render( $demo_data, $fields, 'name' ); ?>
+	<?php echo WhosComing::render( $demo_data, $fields, 'name', 'class_year' ); ?>
 </main>
 <script src="<?php echo $dist; ?>whos-coming.js"></script>
