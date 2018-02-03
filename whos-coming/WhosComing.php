@@ -215,12 +215,10 @@ class WhosComing {
 	<?php foreach ( array_filter( $data ) as $person ) : ?>
 		<div class="whos-coming__row">
 		<?php foreach ( $fields as $field ) : ?>
-			<?php if ( ! empty( $person[ $field['whos_coming__field_key'] ] ) ) : ?>
 			<span data-whos-coming-data="<?php echo WP::esc_attr( $field['whos_coming__field_key'] ); ?>"
 				class="whos-coming__cell whos-coming__<?php echo WP::esc_attr( $field['whos_coming__field_key'] ); ?>">
 				<?php echo WP::wp_kses_post( $person[ $field['whos_coming__field_key'] ] ); ?>
 			</span>
-			<?php endif; ?>
 		<?php endforeach; ?>
 		</div>
 	<?php endforeach; ?>

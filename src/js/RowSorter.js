@@ -162,6 +162,7 @@ class RowSorter {
     for (var i = 0; i < searchWords.length; i += 1) {
       for (var j = 0; j < textWords.length; j += 1) {
         if (searchWords[i].indexOf(textWords[j]) !== -1) {
+          console.log(searchWords, textWords);
           return true;
         }
 
@@ -235,8 +236,16 @@ class RowSorter {
             }
 
             return this.matchesSearch(
-              this.searchTerm.toLowerCase().split(' '),
-              row.data[this.searchField].toLowerCase().split(' ')
+              this.searchTerm
+                .replace(/[^a-zA-Z\d\s:]/g, '')
+                .toLowerCase()
+                .split(' ')
+                .filter(word => word.length),
+              row.data[this.searchField]
+                .replace(/[^a-zA-Z\d\s:]/g, '')
+                .toLowerCase()
+                .split(' ')
+                .filter(word => word.length)
             );
           })
           .sort(this.columnUSort)

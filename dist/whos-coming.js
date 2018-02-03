@@ -298,6 +298,7 @@ var RowSorter = function () {
       for (var i = 0; i < searchWords.length; i += 1) {
         for (var j = 0; j < textWords.length; j += 1) {
           if (searchWords[i].indexOf(textWords[j]) !== -1) {
+            console.log(searchWords, textWords);
             return true;
           }
 
@@ -311,7 +312,7 @@ var RowSorter = function () {
     }
 
     /**
-     * The callback that sorts rows in ascending or descending order by a specified column.
+     * Callback that sorts rows by a specified column.
      * @param {Object} a First row.
      * @param {Object} b Second row.
      * @return {Number} Zero, -1, or 1;
@@ -375,7 +376,11 @@ var RowSorter = function () {
           return true;
         }
 
-        return _this2.matchesSearch(_this2.searchTerm.toLowerCase().split(' '), row.data[_this2.searchField].toLowerCase().split(' '));
+        return _this2.matchesSearch(_this2.searchTerm.replace(/[^a-zA-Z\d\s:]/g, '').toLowerCase().split(' ').filter(function (word) {
+          return word.length;
+        }), row.data[_this2.searchField].replace(/[^a-zA-Z\d\s:]/g, '').toLowerCase().split(' ').filter(function (word) {
+          return word.length;
+        }));
       }).sort(this.columnUSort).map(function (row) {
         return row.element;
       }))));
