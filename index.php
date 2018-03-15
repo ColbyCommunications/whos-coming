@@ -4,7 +4,7 @@
  * Description: A listing of people who have R.S.V.P.'ed to an event, with the list entered in JSON or CSV format.
  * Plugin URI: https://github.com/ColbyCommunications/whos-coming
  * Version: 0.1.0
- * Author: John Watkins <john.watkins@colby.edu
+ * Author: John Watkins <john.watkins@colby.edu>
  * Text Domain: whos-coming
  *
  * @package colbycomms/whos-coming
